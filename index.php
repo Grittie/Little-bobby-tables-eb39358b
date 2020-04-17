@@ -1,122 +1,101 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <title> Netland CP</title>
-</head>
+<html>
+<form action="index.php" method="post">
+    <input type="submit" name="logout" value="Logout">
+</form>
 
 <body>
-    <?php
-        session_start();
-    function select($query)
-    {
-        $host = 'localhost';
-        $db   = 'netland';
-        $user = 'root';
-        $pass = '';
-        $charset = 'utf8mb4';
-
-        $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
-        $options = [
-            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES   => false,
-        ];
-
-        try {
-            $pdo = new PDO($dsn, $user, $pass, $options);
-        } catch (\PDOException $e) {
-            throw new \PDOException($e->getMessage(), (int) $e->getCode());
-        }
-
-        $formatResult = array();
-
-        $rawResult = $pdo->query($query);
-        while ($row = $rawResult->fetch()) {
-            $rowResult = array();
-
-            foreach ($row as $column => $value) {
-                $rowResult[$column] = $value;
-            }
-
-            $formatResult[] = $rowResult;
-        }
-
-        return $formatResult;
-    }
-
-    if (isset($_COOKIE['loggedInUser'])) {
-    } else {
-        header("Refresh: 2; url=login.php");
-    exit("You are not logged in, redirecting to login page.");
-    }
-    ?>
-
-    <form action="logout.php" method="POST"> <input type="submit" name="logout" value="Logout" style="float: right;"> </form>
-    <h1> Welcome to the Netland control panel </h1>
-    <h3> Series <a href="create.php?type=series"> add</a> </h3>
-
-    <?php
-    if (isset($_GET['seriesOrder'])) {
-        $order = $_GET['seriesOrder'];
-
-        if ($order == 'title') {
-            $seriesData = 'SELECT * FROM media WHERE serie = true ORDER BY title';
-        } else {
-            $seriesData = 'SELECT * FROM media WHERE serie = true ORDER BY rating';
-        }
-    } else {
-        $seriesData = 'SELECT * FROM media WHERE serie = true';
-    }
-    ?>
-    <table>
-        <thead>
-            <td style="font-weight:bold"><a href=index.php?seriesOrder=title> Title </a></td>
-            <td style="font-weight:bold"><a href=index.php?seriesOrder=rating> Rating </a></td>
-            <th></th>
-        </thead>
-        <tbody>
-            <?php
-            $rows = select('SELECT * FROM media WHERE serie = true');
-            foreach ($rows as $row) {
-                echo <<<EOT
-                        <tr>
-                            <td>${row['title']}</td>
-                            <td>${row['rating']}</td>
-                            <td><a href="info.php?id=${row['id']}">More info</a></td>
-                        </tr>
-                    EOT;
-            }
-            ?>
-        </tbody>
-    </table>
+<?php
+if (isset($_POST['logout'])) {
+    setcookie("loggedInUser", "", time()-60);
+    header("Location: login.php", true, 301);
+}
 
 
-    <h3>Films <a href="create.php?type=movies"> add</a></h3>
+if (!isset($_COOKIE['loggedInUser'])) {
+    header("Location: login.php", true, 301);
+}
 
-    <table>
-        <thead>
-            <th>Titel</th>
-            <th>Beoordeling</th>
-            <th></th>
-        </thead>
-        <tbody>
-            <?php
-            $rows = select('SELECT * FROM media WHERE serie = false');
-            foreach ($rows as $row) {
-                echo <<<EOT
-                            <tr>
-                                <td>${row['title']}</td>
-                                <td>${row['rating']}</td>
-                                <td><a href="info.php?id=${row['id']}">More info</a></td>
-                            </tr>
-                        EOT;
-            }
 
-            ?>
-        </tbody>
-    </table>
+
+
+$host = '127.0.0.1:3306';
+$db   = 'netland';
+$user = 'root';
+$pass = '';
+$charset = 'utf8mb4';
+
+$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+$options = [
+    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES   => false,
+];
+try {
+    $pdo = new PDO($dsn, $user, $pass, $options);
+    echo("Connected to: " . $db . " on " . $host . " version: " . phpversion());
+    echo("<br>");
+} catch (\PDOException $e) {
+    throw new \PDOException($e->getMessage(), (int)$e->getCode());
+}
+
+$movies = "SELECT *
+        FROM media WHERE type='movie'";
+
+$q = $pdo->query($movies);
+$moviedata = $q->fetchAll(PDO::FETCH_ASSOC);
+
+
+
+$series = "SELECT *
+        FROM media WHERE type='serie'";
+
+$w = $pdo->query($series);
+$seriedata = $w->fetchAll(PDO::FETCH_ASSOC);
+
+
+echo("<h1>movies</h1>");
+echo("<table>");
+echo("<tr>");
+echo("<td><b>Title" . "</b></td>");
+echo("<td><b> Release date" . "</b></td>");
+
+echo("</tr>");
+
+foreach ($moviedata as $row){
+    echo("<tr>");
+    echo("<td>" . $row["title"] . "</td>");
+    echo("<td>" . $row["releasedate"] . "</td>");
+    echo("<td><a href='details.php?id=" . $row['id'] . "'" . ">details</a></td>");
+    echo("</tr>");
+}
+echo("<tr><td><a href='create.php'>add movie</a></td></tr>");
+echo("</table>");
+
+
+echo("<h1>Series</h1>");
+echo("<table>");
+echo("<tr>");
+echo("<td><b>Title" . "</b></td>");
+echo("<td><b> Seasons" . "</b></td>");
+echo("<td><b> Rating" . "</b></td>");
+
+
+echo("</tr>");
+
+foreach ($seriedata as $row){
+    echo("<tr>");
+    echo("<td>" . $row["title"] . "</td>");
+    echo("<td>" . $row["seasons"] . "</td>");
+    echo("<td>" . $row["rating"] . "/10" . "</td>");
+
+    echo("<td><a href='details.php?id=" . $row['id'] . "'" . ">details</a></td>");
+    echo("</tr>");
+}
+echo("<tr><td><a href='create.php'>add serie</a></td></tr>");
+echo("</table>");
+
+?>
+</html>
+
 </body>
 
-</html>

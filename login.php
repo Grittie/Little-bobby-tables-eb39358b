@@ -1,14 +1,46 @@
-<!DOCTYPE html>
-<html lang="en">
-
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title> Netland CP</title>
+<title>Netland - Login</title>
 </head>
 
-<body>
+<style>
+
+    .loginbox {
+        margin: 0 auto;
+        margin-top: 2%;
+        width: 40%;
+        text-align: center;
+        font-family: "Consolas";
+    }
+
+    input {
+        margin-bottom: 2%;
+        height: 3%;
+        width: 60%;
+    }
+
+    .status{
+        color: green;
+        text-align: center;
+    }
+
+    .redstatus{
+        color: white;
+        background-color: red;
+        padding: 5px;
+        margin: 0 auto;
+        width: 20%;
+        text-align: center;
+        border-radius: 10px;
+    }
+
+</style>
+
 <?php
 session_start();
+
+
+
 
 $host = '127.0.0.1:3306';
 $db = 'netland';
@@ -24,51 +56,66 @@ $options = [
 ];
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
-    } catch (\PDOException $e) {
+    echo("<div class='status'>");
+    echo("Connected to: " . $db . " on " . $host . " version: " . phpversion());
+    echo("</div>");
+    echo("<br>");
+} catch (\PDOException $e) {
     throw new \PDOException($e->getMessage(), (int)$e->getCode());
 }
-    ?>
 
-    <h1> Netland Admin Panel </h1>
-    
-    <form action="login.php" method="POST">
-        <input type="text" name="username" placeholder="username">
-        <input type="password" name="password" placeholder="password">
-        <input type="submit" value="login" name="submit">   
-    </form>
+?>
 
-    <?php
-    $user;
-    $password;
 
-    if (isset($_POST['submit'])) {
-        $username = $_POST['username'];
-        $password = $_POST['password'];
+	<body>
 
-        // $query = 'SELECT * FROM gebruikers';
 
-        $user = "SELECT *
-            FROM gebruikers WHERE username='$username'";
-        $q = $pdo->query($user);
-        $data = $q->fetchAll(PDO::FETCH_ASSOC);
+        <div class='loginbox'>
+        <h1>Netland Admin Panel</h1>
 
-         if (isset($data)) {
-        echo("<div class='redstatus'><b>Login failed, due to incorrect credentials </b></div>");
-    }
+	    <form action='login.php' method='POST'>
+	    <input type='text' name='username' placeholder='username'>
+            <br>
+	    <input type='password' name='password' placeholder='password'>
+            <br>
+	    <input type='submit' name='submit' value='login'>
+	    </form>
 
-      foreach ($data as $row) {
+        </div>
 
-        if ($password == $row['wachtwoord']){
-            setcookie('loggedInUser', $row['id']);
-            header("Location: index.php");
+	</body>
+
+</html>
+
+<?php
+
+
+
+if (isset($_POST['submit'])) {
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
+
+    if ($stmt->execute(array($_POST['username']))) {
+        while ($row = $stmt->fetch()) {
+		print_r($row);
+
+		if($row['password'] == $password) {
+			echo("Password Correct");
+			setcookie('loggedInUser', $row['id']);
+            header("Location: index.php", true, 301);
             exit();
-        
+		
+			}else { 
+				echo("Password Incorrect");
+			}
+
         }
     }
 }
 
-    ?>
 
-</body>
 
-</html>
+
+?>
